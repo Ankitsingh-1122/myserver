@@ -1,7 +1,7 @@
 const express = require('express');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
     res.send("Server is running 🚀");
@@ -9,4 +9,16 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Server started at http://localhost:${PORT}`);
+});
+app.use(express.json());
+
+app.post('/login', (req, res) => {
+
+    const { email, password } = req.body;
+
+    if (email === "admin@gmail.com" && password === "1234") {
+        res.json({ success: true, message: "Login successful ✅" });
+    } else {
+        res.json({ success: false, message: "Invalid credentials ❌" });
+    }
 });
