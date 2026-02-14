@@ -4,7 +4,13 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+/* ✅ Proper CORS setup */
+app.use(cors({
+    origin: "*",   // allow all origins
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"]
+}));
+
 app.use(express.json());
 
 app.get('/', (req, res) => {
