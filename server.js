@@ -4,6 +4,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 const User = require("./models/User");
 
@@ -11,25 +12,9 @@ const User = require("./models/User");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ================= DEBUG ENV CHECK =================
-console.log("========== ENV CHECK ==========");
-console.log("MONGO_URI:", process.env.MONGO_URI);
-console.log("JWT_SECRET:", process.env.JWT_SECRET);
-console.log("================================");
-
 // ================= MIDDLEWARE =================
 app.use(cors());
 app.use(express.json());
-
-// ================= DATABASE CONNECTION =================
-mongoose.connect(process.env.MONGO_URI)
-.then(() => {
-    console.log("MongoDB Connected ✅");
-})
-.catch((err) => {
-    console.log("MongoDB Connection Error ❌");
-    console.log(err.message);
-});
 
 // ================= TEST ROUTE =================
 app.get("/", (req, res) => {
@@ -105,7 +90,7 @@ app.post("/login", async (req, res) => {
 
         const token = jwt.sign(
             { userId: user._id },
-            process.env.JWT_SECRET || "fallbackSecret",
+            process.env.JWT_SECRET,
             { expiresIn: "1h" }
         );
 
@@ -124,7 +109,19 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// ================= START SERVER =================
-app.listen(PORT, () => {
-    console.log(`Server started on port ${PORT} 🚀`);
+// ================= DATABASE CONNECTION + SERVER START =================
+mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 10000
+})
+.then(() => {
+    console.log("MongoDB Connected ✅");
+
+    app.listen(PORT, () => {
+        console.log(`Server started on port ${PORT} 🚀`);
+    });
+
+})
+.catch((err) => {
+    console.log("MongoDB Connection Error ❌");
+    console.log(err);
 });
