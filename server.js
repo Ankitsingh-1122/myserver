@@ -6,7 +6,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-const { GoogleGenAI } = require("@google/genai");
+const Groq = require("groq-sdk");
 const User = require("./models/User");
 
 // ================= APP CONFIG =================
@@ -22,9 +22,9 @@ app.use(cors({
 
 app.use(express.json());
 
-// ================= GEMINI CONFIG =================
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
+// ================= GROQ CONFIG =================
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
 });
 
 // ================= TEST ROUTE =================
@@ -120,7 +120,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ================= AI HELPER ROUTE =================
+// ================= AI HELPER ROUTE (GROQ) =================
 app.post("/helper", async (req, res) => {
   try {
     const { message } = req.body;
@@ -129,24 +129,20 @@ app.post("/helper", async (req, res) => {
       return res.status(400).json({ error: "Message required" });
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: message }]
-        }
-      ]
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are a helpful college AI assistant." },
+        { role: "user", content: message }
+      ],
+      model: "llama-3.1-8b-instant"
     });
 
-    const reply =
-      response.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No response from AI";
+    const reply = chatCompletion.choices[0].message.content;
 
     res.json({ reply });
 
   } catch (error) {
-    console.error("Gemini Error:", error);
+    console.error("Groq Error:", error);
     res.status(500).json({ error: "AI failed" });
   }
 });
@@ -164,6 +160,3 @@ mongoose.connect(process.env.MONGO_URI)
 .catch((err) => {
   console.error("MongoDB Connection Error ❌", err);
 });
-
-// Debug (optional)
-console.log("Gemini Key Exists:", !!process.env.GEMINI_API_KEY);
