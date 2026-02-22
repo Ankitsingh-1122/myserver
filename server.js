@@ -68,7 +68,7 @@ app.post("/register", async (req, res) => {
     });
 
   } catch (error) {
-    console.log("Register Error:", error);
+    console.error("Register Error:", error);
     res.status(500).json({
       success: false,
       message: "Server error"
@@ -112,7 +112,7 @@ app.post("/login", async (req, res) => {
     });
 
   } catch (error) {
-    console.log("Login Error:", error);
+    console.error("Login Error:", error);
     res.status(500).json({
       success: false,
       message: "Server error"
@@ -130,19 +130,24 @@ app.post("/helper", async (req, res) => {
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: message
+      model: "gemini-2.0-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: message }]
+        }
+      ]
     });
 
-    res.json({
-      reply: response.text
-    });
+    const reply =
+      response.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No response from AI";
+
+    res.json({ reply });
 
   } catch (error) {
     console.error("Gemini Error:", error);
-    res.status(500).json({
-      error: "AI failed"
-    });
+    res.status(500).json({ error: "AI failed" });
   }
 });
 
@@ -157,7 +162,8 @@ mongoose.connect(process.env.MONGO_URI)
 
 })
 .catch((err) => {
-  console.log("MongoDB Connection Error ❌", err);
+  console.error("MongoDB Connection Error ❌", err);
 });
 
+// Debug (optional)
 console.log("Gemini Key Exists:", !!process.env.GEMINI_API_KEY);
