@@ -4,6 +4,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
 
 const User = require("./models/User");
@@ -15,6 +16,9 @@ const PORT = process.env.PORT || 3000;
 // ================= MIDDLEWARE =================
 app.use(cors());
 app.use(express.json());
+
+// ================= GEMINI CONFIG =================
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // ================= TEST ROUTE =================
 app.get("/", (req, res) => {
@@ -105,6 +109,35 @@ app.post("/login", async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Server error"
+        });
+    }
+});
+
+// ================= AI HELPER ROUTE =================
+app.post("/helper", async (req, res) => {
+    try {
+        const { message } = req.body;
+
+        if (!message) {
+            return res.status(400).json({
+                error: "Message required"
+            });
+        }
+
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash"
+        });
+
+        const result = await model.generateContent(message);
+        const response = await result.response;
+        const text = response.text();
+
+        res.json({ reply: text });
+
+    } catch (error) {
+        console.error("Gemini Error:", error);
+        res.status(500).json({
+            error: "AI failed"
         });
     }
 });
